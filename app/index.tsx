@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   StatusBar,
@@ -7,12 +7,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { soundService } from "../services/SoundService";
 
 export default function CalculatorScreen() {
   const [display, setDisplay] = useState<string>("0");
   const [previousValue, setPreviousValue] = useState<number | null>(null);
   const [operation, setOperation] = useState<string | null>(null);
   const [waitingForOperand, setWaitingForOperand] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Cleanup function to unload sounds when component unmounts
+    return () => {
+      soundService.cleanup();
+    };
+  }, []);
 
   const inputNumber = (num: number) => {
     if (waitingForOperand) {
@@ -87,10 +95,21 @@ export default function CalculatorScreen() {
     setDisplay(String(value * -1));
   };
 
+  const handleButtonPress = async (
+    onPress: () => void,
+    buttonValue?: string | number
+  ) => {
+    // Play keyboard sound with specific button input
+    await soundService.playKeySound(buttonValue);
+    // Execute the button's function
+    onPress();
+  };
+
   const renderButton = (
     title: string,
     onPress: () => void,
-    style: string = "number"
+    style: string = "number",
+    buttonValue?: string | number
   ) => {
     const buttonStyle = [
       styles.button,
@@ -105,7 +124,10 @@ export default function CalculatorScreen() {
     ];
 
     return (
-      <TouchableOpacity style={buttonStyle} onPress={onPress}>
+      <TouchableOpacity
+        style={buttonStyle}
+        onPress={() => handleButtonPress(onPress, buttonValue)}
+      >
         <Text style={textStyle}>{title}</Text>
       </TouchableOpacity>
     );
@@ -120,37 +142,37 @@ export default function CalculatorScreen() {
 
       <View style={styles.buttonContainer}>
         <View style={styles.row}>
-          {renderButton("AC", clear, "function")}
-          {renderButton("+/-", toggleSign, "function")}
-          {renderButton("%", percentage, "function")}
-          {renderButton("÷", () => performOperation("÷"), "operator")}
+          {renderButton("AC", clear, "function", "AC")}
+          {renderButton("+/-", toggleSign, "function", "+/-")}
+          {renderButton("%", percentage, "function", "%")}
+          {renderButton("÷", () => performOperation("÷"), "operator", "÷")}
         </View>
 
         <View style={styles.row}>
-          {renderButton("7", () => inputNumber(7))}
-          {renderButton("8", () => inputNumber(8))}
-          {renderButton("9", () => inputNumber(9))}
-          {renderButton("×", () => performOperation("×"), "operator")}
+          {renderButton("7", () => inputNumber(7), "number", 7)}
+          {renderButton("8", () => inputNumber(8), "number", 8)}
+          {renderButton("9", () => inputNumber(9), "number", 9)}
+          {renderButton("×", () => performOperation("×"), "operator", "×")}
         </View>
 
         <View style={styles.row}>
-          {renderButton("4", () => inputNumber(4))}
-          {renderButton("5", () => inputNumber(5))}
-          {renderButton("6", () => inputNumber(6))}
-          {renderButton("-", () => performOperation("-"), "operator")}
+          {renderButton("4", () => inputNumber(4), "number", 4)}
+          {renderButton("5", () => inputNumber(5), "number", 5)}
+          {renderButton("6", () => inputNumber(6), "number", 6)}
+          {renderButton("-", () => performOperation("-"), "operator", "-")}
         </View>
 
         <View style={styles.row}>
-          {renderButton("1", () => inputNumber(1))}
-          {renderButton("2", () => inputNumber(2))}
-          {renderButton("3", () => inputNumber(3))}
-          {renderButton("+", () => performOperation("+"), "operator")}
+          {renderButton("1", () => inputNumber(1), "number", 1)}
+          {renderButton("2", () => inputNumber(2), "number", 2)}
+          {renderButton("3", () => inputNumber(3), "number", 3)}
+          {renderButton("+", () => performOperation("+"), "operator", "+")}
         </View>
 
         <View style={styles.row}>
-          {renderButton("0", () => inputNumber(0), "zero")}
-          {renderButton(".", inputDecimal)}
-          {renderButton("=", () => performOperation("="), "operator")}
+          {renderButton("0", () => inputNumber(0), "zero", 0)}
+          {renderButton(".", inputDecimal, "number", ".")}
+          {renderButton("=", () => performOperation("="), "operator", "=")}
         </View>
       </View>
     </SafeAreaView>
