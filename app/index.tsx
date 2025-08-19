@@ -1,73 +1,217 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import {
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from "@/components/HelloWave";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+export default function CalculatorScreen() {
+  const [display, setDisplay] = useState<string>("0");
+  const [previousValue, setPreviousValue] = useState<number | null>(null);
+  const [operation, setOperation] = useState<string | null>(null);
+  const [waitingForOperand, setWaitingForOperand] = useState<boolean>(false);
 
-export default function HomeScreen() {
+  const inputNumber = (num: number) => {
+    if (waitingForOperand) {
+      setDisplay(String(num));
+      setWaitingForOperand(false);
+    } else {
+      setDisplay(display === "0" ? String(num) : display + num);
+    }
+  };
+
+  const inputDecimal = () => {
+    if (waitingForOperand) {
+      setDisplay("0.");
+      setWaitingForOperand(false);
+    } else if (display.indexOf(".") === -1) {
+      setDisplay(display + ".");
+    }
+  };
+
+  const clear = () => {
+    setDisplay("0");
+    setPreviousValue(null);
+    setOperation(null);
+    setWaitingForOperand(false);
+  };
+
+  const performOperation = (nextOperation: string) => {
+    const inputValue = parseFloat(display);
+
+    if (previousValue === null) {
+      setPreviousValue(inputValue);
+    } else if (operation) {
+      const currentValue = previousValue || 0;
+      const newValue = calculate(currentValue, inputValue, operation);
+
+      setDisplay(String(newValue));
+      setPreviousValue(newValue);
+    }
+
+    setWaitingForOperand(true);
+    setOperation(nextOperation);
+  };
+
+  const calculate = (
+    firstValue: number,
+    secondValue: number,
+    operation: string
+  ): number => {
+    switch (operation) {
+      case "+":
+        return firstValue + secondValue;
+      case "-":
+        return firstValue - secondValue;
+      case "×":
+        return firstValue * secondValue;
+      case "÷":
+        return firstValue / secondValue;
+      case "=":
+        return secondValue;
+      default:
+        return secondValue;
+    }
+  };
+
+  const percentage = () => {
+    const value = parseFloat(display);
+    setDisplay(String(value / 100));
+  };
+
+  const toggleSign = () => {
+    const value = parseFloat(display);
+    setDisplay(String(value * -1));
+  };
+
+  const renderButton = (
+    title: string,
+    onPress: () => void,
+    style: string = "number"
+  ) => {
+    const buttonStyle = [
+      styles.button,
+      style === "operator" && styles.operatorButton,
+      style === "function" && styles.functionButton,
+      style === "zero" && styles.zeroButton,
+    ];
+
+    const textStyle = [
+      styles.buttonText,
+      style === "function" && styles.functionText,
+    ];
+
+    return (
+      <TouchableOpacity style={buttonStyle} onPress={onPress}>
+        <Text style={textStyle}>{title}</Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/index.tsx</ThemedText> to
-          see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">
-            npm run reset-project
-          </ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.displayContainer}>
+        <Text style={styles.displayText}>{display}</Text>
+      </View>
+
+      <View style={styles.buttonContainer}>
+        <View style={styles.row}>
+          {renderButton("AC", clear, "function")}
+          {renderButton("+/-", toggleSign, "function")}
+          {renderButton("%", percentage, "function")}
+          {renderButton("÷", () => performOperation("÷"), "operator")}
+        </View>
+
+        <View style={styles.row}>
+          {renderButton("7", () => inputNumber(7))}
+          {renderButton("8", () => inputNumber(8))}
+          {renderButton("9", () => inputNumber(9))}
+          {renderButton("×", () => performOperation("×"), "operator")}
+        </View>
+
+        <View style={styles.row}>
+          {renderButton("4", () => inputNumber(4))}
+          {renderButton("5", () => inputNumber(5))}
+          {renderButton("6", () => inputNumber(6))}
+          {renderButton("-", () => performOperation("-"), "operator")}
+        </View>
+
+        <View style={styles.row}>
+          {renderButton("1", () => inputNumber(1))}
+          {renderButton("2", () => inputNumber(2))}
+          {renderButton("3", () => inputNumber(3))}
+          {renderButton("+", () => performOperation("+"), "operator")}
+        </View>
+
+        <View style={styles.row}>
+          {renderButton("0", () => inputNumber(0), "zero")}
+          {renderButton(".", inputDecimal)}
+          {renderButton("=", () => performOperation("="), "operator")}
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: "#000000",
+    justifyContent: "flex-end",
+  },
+  displayContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    paddingHorizontal: 30,
+    paddingBottom: 30,
+  },
+  displayText: {
+    fontSize: 80,
+    fontWeight: "200",
+    color: "#FFFFFF",
+    textAlign: "right",
+  },
+  buttonContainer: {
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+  },
+  row: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  button: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#333333",
+    justifyContent: "center",
     alignItems: "center",
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  operatorButton: {
+    backgroundColor: "#FF9500",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  functionButton: {
+    backgroundColor: "#A6A6A6",
+  },
+  zeroButton: {
+    width: 175,
+    borderRadius: 40,
+    justifyContent: "center",
+    paddingLeft: 30,
+    alignItems: "flex-start",
+  },
+  buttonText: {
+    fontSize: 35,
+    fontWeight: "400",
+    color: "#FFFFFF",
+  },
+  functionText: {
+    color: "#000000",
   },
 });
