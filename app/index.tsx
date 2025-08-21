@@ -7,9 +7,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ThemePicker } from "../components/ThemePicker";
+import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { soundService } from "../services/SoundService";
 
-export default function CalculatorScreen() {
+function Calculator() {
+  const { currentTheme } = useTheme();
   const [display, setDisplay] = useState<string>("0");
   const [previousValue, setPreviousValue] = useState<number | null>(null);
   const [operation, setOperation] = useState<string | null>(null);
@@ -111,33 +114,84 @@ export default function CalculatorScreen() {
     style: string = "number",
     buttonValue?: string | number
   ) => {
-    const buttonStyle = [
-      styles.button,
-      style === "operator" && styles.operatorButton,
-      style === "function" && styles.functionButton,
-      style === "zero" && styles.zeroButton,
-    ];
+    const getButtonStyle = () => {
+      const baseButtonStyle = [styles.button];
 
-    const textStyle = [
-      styles.buttonText,
-      style === "function" && styles.functionText,
-    ];
+      switch (style) {
+        case "operator":
+          return [
+            baseButtonStyle,
+            { backgroundColor: currentTheme.colors.operatorButton },
+          ];
+        case "function":
+          return [
+            baseButtonStyle,
+            { backgroundColor: currentTheme.colors.functionButton },
+          ];
+        case "zero":
+          return [
+            baseButtonStyle,
+            styles.zeroButton,
+            { backgroundColor: currentTheme.colors.numberButton },
+          ];
+        default:
+          return [
+            baseButtonStyle,
+            { backgroundColor: currentTheme.colors.numberButton },
+          ];
+      }
+    };
+
+    const getTextStyle = () => {
+      const baseTextStyle = [styles.buttonText];
+
+      switch (style) {
+        case "operator":
+          return [
+            baseTextStyle,
+            { color: currentTheme.colors.operatorButtonText },
+          ];
+        case "function":
+          return [
+            baseTextStyle,
+            { color: currentTheme.colors.functionButtonText },
+          ];
+        default:
+          return [
+            baseTextStyle,
+            { color: currentTheme.colors.numberButtonText },
+          ];
+      }
+    };
 
     return (
       <TouchableOpacity
-        style={buttonStyle}
+        style={getButtonStyle()}
         onPress={() => handleButtonPress(onPress, buttonValue)}
       >
-        <Text style={textStyle}>{title}</Text>
+        <Text style={getTextStyle()}>{title}</Text>
       </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: currentTheme.colors.background },
+      ]}
+    >
       <StatusBar barStyle="light-content" />
+      <ThemePicker />
       <View style={styles.displayContainer}>
-        <Text style={styles.displayText}>{display}</Text>
+        <Text
+          style={[
+            styles.displayText,
+            { color: currentTheme.colors.displayText },
+          ]}
+        >
+          {display}
+        </Text>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -179,10 +233,17 @@ export default function CalculatorScreen() {
   );
 }
 
+export default function CalculatorScreen() {
+  return (
+    <ThemeProvider>
+      <Calculator />
+    </ThemeProvider>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
     justifyContent: "flex-end",
   },
   displayContainer: {
@@ -195,7 +256,6 @@ const styles = StyleSheet.create({
   displayText: {
     fontSize: 80,
     fontWeight: "200",
-    color: "#FFFFFF",
     textAlign: "right",
   },
   buttonContainer: {
@@ -211,15 +271,8 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#333333",
     justifyContent: "center",
     alignItems: "center",
-  },
-  operatorButton: {
-    backgroundColor: "#FF9500",
-  },
-  functionButton: {
-    backgroundColor: "#A6A6A6",
   },
   zeroButton: {
     width: 175,
@@ -231,9 +284,5 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 35,
     fontWeight: "400",
-    color: "#FFFFFF",
-  },
-  functionText: {
-    color: "#000000",
   },
 });
